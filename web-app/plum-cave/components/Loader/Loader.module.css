@@ -1,0 +1,77 @@
+  .loaderContainer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    background-color: var(--background);
+  }
+
+  .loaderContent {
+    display: flex;
+    align-items: center;
+    padding: 24px;
+    border-radius: 12px;
+    border: 1px solid var(--background-adjacent-color);
+    background-color: var(--card-background);
+  }
+  
+  .logo {
+    border-radius: 12px;
+    width: 256px;
+    height: 256px;
+  }
+  
+  .appName {
+    margin-left: 20px;
+    font-weight: bold;
+    color: var(--foreground);
+    font-size: 4rem;
+  }
+  
+  @media (max-width: 1279px) {
+    .logo {
+      width: 224px;
+      height: 224px;
+      border-radius: 10px;
+    }
+    .appName {
+      font-size: 3.2rem;
+    }
+  }
+  
+  @media (max-width: 1023px) {
+    .logo {
+      width: 192px;
+      height: 192px;
+      border-radius: 8px;
+    }
+    .appName {
+      font-size: 2.8rem;
+      margin-left: 15px;
+    }
+  }
+  
+  @media (max-width: 799px) {
+    .logo {
+      width: 160px;
+      height: 160px;
+      border-radius: 6px;
+    }
+    .appName {
+      font-size: 2.2rem;
+      margin-left: 12px;
+    }
+  }
+  
+  @media (max-width: 599px) {
+    .logo {
+      width: 92px;
+      height: 92px;
+      border-radius: 4px;
+    }
+    .appName {
+      font-size: 1.23rem;
+      margin-left: 10px;
+    }
+  }
+  
