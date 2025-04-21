@@ -96,7 +96,7 @@ The app is fully localized into:
 
 # Adjusting/Removing Limitations
 
-Firestore rules are easy to edit, especially using AI tools like [Perplexity](https://www.perplexity.ai/) or [Mistral's Le Chat](https://chat.mistral.ai/chat), so I'll only explain how to remove app-enforced limits.
+Firestore rules are easy to edit, especially using AI tools like [Perplexity](https://www.perplexity.ai/) or [Mistral's Le Chat](https://chat.mistral.ai/chat), so I'll only explain how to remove the in-app-enforced limitations.
 
 ---
 
