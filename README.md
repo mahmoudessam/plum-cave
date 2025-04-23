@@ -147,6 +147,8 @@ To run the app with your own Firebase instance:
 
 The existence of this project (at least in its current form) wouldn't've been possible without the following:
 
+### Web App
+
 [View transitions - Demo](https://codepen.io/stefanjudis/pen/ByBbNGQ) by [Stefan Judis](https://codepen.io/stefanjudis)
 
 [Toolbars With Sliding Selection](https://codepen.io/jkantner/pen/OJKZxpv) by [Jon Kantner](https://codepen.io/jkantner)
@@ -236,3 +238,11 @@ Used [Namer UI](https://namer-ui.netlify.app/) components:
 - Random Number Generator
 
 - File Encrypter
+
+### Python Script
+
+[Replit Agent](https://replit.com/~)
+
+[Perplexity](https://www.perplexity.ai/)
+
+[Mistral's Le Chat](https://chat.mistral.ai/chat)
