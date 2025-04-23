@@ -80,7 +80,8 @@ class Database:
     def get_project(self, project_id):
         """Retrieve a specific project by its ID"""
         self.cursor.execute(
-            "SELECT id, name, folder_path, description, file_exclusions, folder_exclusions FROM projects WHERE id = ?", (project_id,)
+            "SELECT id, name, folder_path, description, file_exclusions, folder_exclusions FROM projects WHERE id = ?",
+            (project_id,)
         )
         row = self.cursor.fetchone()
         if row:
@@ -172,25 +173,20 @@ class BackupManager:
         """Create a backup for the specified project, with verbose debug output."""
         import datetime
         import os
-
         # Get project details
         project = self.db.get_project(project_id)
         if not project:
             print("DEBUG: Project not found for id:", project_id)
             return False, "Project not found"
-        
         # Get exclusions directly from the project dictionary
         file_exclusions = set(project['file_exclusions'] or [])
         folder_exclusions = set(project['folder_exclusions'] or [])
-
         print("\n========== DEBUG: RAW EXCLUSIONS ==========")
         print("File exclusions (raw):", file_exclusions)
         print("Folder exclusions (raw):", folder_exclusions)
-
         # Normalize exclusions: all paths relative to project root, forward slashes, no leading/trailing slashes
         excluded_files = set(os.path.normpath(f).replace("\\", "/").strip("/") for f in file_exclusions)
         excluded_folders = set(os.path.normpath(f).replace("\\", "/").strip("/") for f in folder_exclusions)
-
         print("\n========== DEBUG: NORMALIZED EXCLUSIONS ==========")
         print("Excluded files (normalized):", excluded_files)
         for f in excluded_files:
@@ -198,12 +194,10 @@ class BackupManager:
         print("Excluded folders (normalized):", excluded_folders)
         for f in excluded_folders:
             print("  Excluded folder:", f)
-
         # Create timestamp for filename
         timestamp = datetime.datetime.now().strftime("%b-%d-%Y-%I-%M-%S-%p").upper()
         safe_name = "".join(c if c.isalnum() or c in (' ', '-', '_') else '_' for c in project['name'])
         default_filename = f"{safe_name}-{timestamp}.zip"
-
         # Ask user where to save the backup
         from tkinter import filedialog
         save_path = filedialog.asksaveasfilename(
@@ -212,24 +206,20 @@ class BackupManager:
             initialfile=default_filename
         )
         print("DEBUG: User chose save path:", save_path)
-
         if not save_path:
             print("DEBUG: Backup cancelled by user.")
             return False, "Backup cancelled by user"
-
         # Print source and destination info
         print("DEBUG: Source folder:", project['folder_path'])
         print("DEBUG: Destination archive:", save_path)
-
         # Make sure the archive doesn't end up inside itself
         archive_rel = os.path.relpath(save_path, project['folder_path']).replace("\\", "/").strip("/")
-
         try:
             # Create the backup
             return self._create_zip_backup(
-                project['folder_path'], 
-                save_path, 
-                excluded_files, 
+                project['folder_path'],
+                save_path,
+                excluded_files,
                 excluded_folders,
                 archive_rel
             )
@@ -253,10 +243,10 @@ class BackupManager:
         popup.geometry(f"+{x}+{y}")
         # Label for folder path
         label = tk.Label(
-            popup, 
-            text=initial_text, 
+            popup,
+            text=initial_text,
             font=("Helvetica", 12, "bold"),
-            bg=ModernUITheme.BG_COLOR, 
+            bg=ModernUITheme.BG_COLOR,
             fg=ModernUITheme.THEME_COLOR1,
             wraplength=480,
             anchor="w",
@@ -265,12 +255,11 @@ class BackupManager:
         label.pack(fill=tk.BOTH, expand=True, padx=20, pady=30)
         popup.update()
         return popup, label
-    
+
     def _create_zip_backup(self, source_dir, dest_file, excluded_files, excluded_folders, archive_rel):
         import os
         import zipfile
         import tkinter as tk
-
         # Get the root window (assuming you pass it or have a reference)
         root = None
         if hasattr(self, 'root'):
@@ -283,15 +272,12 @@ class BackupManager:
                 root = tk._default_root
             except Exception:
                 pass
-
         # Show progress popup
         popup, label = self._show_progress_popup(root, "Starting backup...")
-
         if not os.path.exists(source_dir):
             popup.destroy()
             print("DEBUG: Source directory not found:", source_dir)
             return False, f"Source directory not found: {source_dir}"
-
         files_added = 0
         files_skipped = 0
         folders_skipped = 0
@@ -308,19 +294,15 @@ class BackupManager:
         print("\n========== DEBUG: STARTING BACKUP ==========")
         print("DEBUG: Walking source folder:", source_dir)
         print("DEBUG: Archive REL path:", archive_rel)
-
         with zipfile.ZipFile(dest_file, 'w', zipfile.ZIP_DEFLATED, compresslevel=9) as zipf:
             for rootdir, dirs, files in os.walk(source_dir):
                 rel_root = os.path.relpath(rootdir, source_dir).replace("\\", "/").strip(".")
                 rel_root = "" if rel_root == "." else rel_root
-
                 # Update the progress label for the current folder
                 folder_display = os.path.relpath(rootdir, source_dir)
                 label.config(text=f"Backing up: {folder_display}")
                 popup.update_idletasks()
                 popup.update()
-
-                # ... (rest of your code for exclusions and adding files)
                 # Filter out excluded directories
                 original_dirs = list(dirs)
                 keep_dirs = []
@@ -336,7 +318,6 @@ class BackupManager:
                     if not excluded:
                         keep_dirs.append(d)
                 dirs[:] = keep_dirs
-
                 # Process files in current directory
                 for file in files:
                     file_path = os.path.join(rootdir, file)
@@ -361,9 +342,7 @@ class BackupManager:
                     print(f"DEBUG: Adding file: {rel_path}")
                     zipf.write(file_path, rel_path)
                     files_added += 1
-
         popup.destroy()  # Close the progress window
-
         print("\n========== DEBUG: BACKUP SUMMARY ==========")
         print(f"DEBUG: Files added: {files_added}")
         print(f"DEBUG: Files skipped: {files_skipped}")
@@ -373,7 +352,7 @@ class BackupManager:
         print(f"DEBUG: Archive size: {archive_size/1024:.2f} KB")
         print(f"DEBUG: Source folder size: {source_size/1024:.2f} KB")
         return True, f"Backup completed successfully. {files_added} files added to {dest_file}\n\nSee console for debug info."
-        
+
 class ModernUITheme:
     """Defines colors and styles for the modern UI theme"""
     # Color scheme
@@ -660,7 +639,6 @@ class ProjectCard(tk.Frame):
         if not project:
             messagebox.showerror("Error", "Project not found")
             return
-
         # Create dialog
         dialog = tk.Toplevel(self.master)
         dialog.title(f"Manage Exclusions - {project['name']}")
@@ -669,13 +647,11 @@ class ProjectCard(tk.Frame):
         dialog.transient(self.master)
         dialog.grab_set()
         dialog.focus_set()
-
         # Center the dialog
         dialog.geometry("+%d+%d" % (
             self.master.winfo_rootx() + (self.master.winfo_width() // 2) - 350,
             self.master.winfo_rooty() + (self.master.winfo_height() // 2) - 300
         ))
-
         # Track changes
         file_exclusions = project['file_exclusions'].copy()
         folder_exclusions = project['folder_exclusions'].copy()
@@ -707,7 +683,12 @@ class ProjectCard(tk.Frame):
         # ===================== File Exclusions Section =====================
         file_frame = ttk.Frame(scrollable_frame, style='Card.TFrame')
         file_frame.pack(fill=tk.X, padx=20, pady=(20, 10), ipady=10)
-        ttk.Label(file_frame, text="File Exclusions", background=ModernUITheme.CARD_BG, font=("Helvetica", 14, "bold")).pack(anchor=tk.W, pady=8, padx=8)
+        ttk.Label(
+            file_frame,
+            text="File Exclusions",
+            background=ModernUITheme.CARD_BG,
+            font=("Helvetica", 14, "bold")
+        ).pack(anchor=tk.W, pady=8, padx=8)
 
         # File List Container
         file_list_container = ttk.Frame(file_frame, style='Card.TFrame')
@@ -718,14 +699,37 @@ class ProjectCard(tk.Frame):
             for widget in file_list_container.winfo_children():
                 widget.destroy()
             if not file_exclusions:
-                empty_label = ttk.Label(file_list_container, text="No file exclusions configured", style='TLabel', background=ModernUITheme.CARD_BG)
+                empty_label = ttk.Label(
+                    file_list_container,
+                    text="No file exclusions configured",
+                    style='TLabel',
+                    background=ModernUITheme.CARD_BG
+                )
                 empty_label.pack(fill=tk.X, pady=5)
                 return
             for excl in file_exclusions:
                 item_frame = ttk.Frame(file_list_container, style='Card.TFrame')
                 item_frame.pack(fill=tk.X, pady=2)
-                ttk.Label(item_frame, text=excl, style='TLabel', background=ModernUITheme.BG_COLOR, width=50, anchor=tk.W).pack(side=tk.LEFT, fill=tk.X, expand=True, padx=ModernUITheme.INNER_PAD_X, pady=ModernUITheme.INNER_PAD_Y)
-                del_btn = tk.Button(item_frame, text="×", font=("Helvetica", 12, "bold"), fg=ModernUITheme.THEME_RED, bg=ModernUITheme.CARD_BG, activeforeground=ModernUITheme.THEME_RED_LIGHT, activebackground=ModernUITheme.CARD_BG, relief="flat", cursor="hand2", command=lambda e=excl: delete_file(e))
+                ttk.Label(
+                    item_frame,
+                    text=excl,
+                    style='TLabel',
+                    background=ModernUITheme.BG_COLOR,
+                    width=50,
+                    anchor=tk.W
+                ).pack(side=tk.LEFT, fill=tk.X, expand=True, padx=ModernUITheme.INNER_PAD_X, pady=ModernUITheme.INNER_PAD_Y)
+                del_btn = tk.Button(
+                    item_frame,
+                    text="×",
+                    font=("Helvetica", 12, "bold"),
+                    fg=ModernUITheme.THEME_RED,
+                    bg=ModernUITheme.CARD_BG,
+                    activeforeground=ModernUITheme.THEME_RED_LIGHT,
+                    activebackground=ModernUITheme.CARD_BG,
+                    relief="flat",
+                    cursor="hand2",
+                    command=lambda e=excl: delete_file(e)
+                )
                 del_btn.pack(side=tk.RIGHT, padx=5)
                 del_btn.bind("<Enter>", lambda e: del_btn.config(fg=ModernUITheme.THEME_RED_LIGHT))
                 del_btn.bind("<Leave>", lambda e: del_btn.config(fg=ModernUITheme.THEME_RED))
@@ -733,7 +737,16 @@ class ProjectCard(tk.Frame):
         # File Controls
         file_control_frame = ttk.Frame(file_frame, style='TFrame')
         file_control_frame.pack(fill=tk.X)
-        file_entry = tk.Entry(file_control_frame, bg=ModernUITheme.CARD_BG, fg=ModernUITheme.FG_COLOR, insertbackground=ModernUITheme.FG_COLOR, font=("Helvetica", 12), relief="flat", highlightbackground=ModernUITheme.BORDER_COLOR, highlightthickness=1)
+        file_entry = tk.Entry(
+            file_control_frame,
+            bg=ModernUITheme.CARD_BG,
+            fg=ModernUITheme.FG_COLOR,
+            insertbackground=ModernUITheme.FG_COLOR,
+            font=("Helvetica", 12),
+            relief="flat",
+            highlightbackground=ModernUITheme.BORDER_COLOR,
+            highlightthickness=1
+        )
         file_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10), ipady=4)
 
         def add_file():
@@ -763,13 +776,28 @@ class ProjectCard(tk.Frame):
                 file_exclusions.remove(excl)
                 refresh_file_list()
 
-        tk.Button(file_control_frame, text="Add File", command=add_file, **ModernUITheme.SECONDARY_BUTTON_STYLE).pack(side=tk.LEFT, padx=(0, 5))
-        tk.Button(file_control_frame, text="Browse...", command=lambda: file_entry.insert(0, filedialog.askopenfilename(initialdir=project_path)), **ModernUITheme.SECONDARY_BUTTON_STYLE).pack(side=tk.LEFT, padx=(0, 5))
+        tk.Button(
+            file_control_frame,
+            text="Add File",
+            command=add_file,
+            **ModernUITheme.SECONDARY_BUTTON_STYLE
+        ).pack(side=tk.LEFT, padx=(0, 5))
+        tk.Button(
+            file_control_frame,
+            text="Browse...",
+            command=lambda: file_entry.insert(0, filedialog.askopenfilename(initialdir=project_path)),
+            **ModernUITheme.SECONDARY_BUTTON_STYLE
+        ).pack(side=tk.LEFT, padx=(0, 5))
 
         # ===================== Folder Exclusions Section =====================
         folder_frame = ttk.Frame(scrollable_frame, style='Card.TFrame')
         folder_frame.pack(fill=tk.X, padx=20, pady=10, ipady=10)
-        ttk.Label(folder_frame, text="Folder Exclusions", background=ModernUITheme.CARD_BG, font=("Helvetica", 14, "bold")).pack(anchor=tk.W, pady=8, padx=8)
+        ttk.Label(
+            folder_frame,
+            text="Folder Exclusions",
+            background=ModernUITheme.CARD_BG,
+            font=("Helvetica", 14, "bold")
+        ).pack(anchor=tk.W, pady=8, padx=8)
 
         # Folder List Container
         folder_list_container = ttk.Frame(folder_frame, style='Card.TFrame')
@@ -780,14 +808,37 @@ class ProjectCard(tk.Frame):
             for widget in folder_list_container.winfo_children():
                 widget.destroy()
             if not folder_exclusions:
-                empty_label = ttk.Label(folder_list_container, text="No folder exclusions configured", style='TLabel', background=ModernUITheme.CARD_BG)
+                empty_label = ttk.Label(
+                    folder_list_container,
+                    text="No folder exclusions configured",
+                    style='TLabel',
+                    background=ModernUITheme.CARD_BG
+                )
                 empty_label.pack(fill=tk.X, pady=5)
                 return
             for excl in folder_exclusions:
                 item_frame = ttk.Frame(folder_list_container, style='Card.TFrame')
                 item_frame.pack(fill=tk.X, pady=2)
-                ttk.Label(item_frame, text=excl, style='TLabel', background=ModernUITheme.BG_COLOR, width=50, anchor=tk.W).pack(side=tk.LEFT, fill=tk.X, expand=True, padx=ModernUITheme.INNER_PAD_X, pady=ModernUITheme.INNER_PAD_Y)
-                del_btn = tk.Button(item_frame, text="×", font=("Helvetica", 12, "bold"), fg=ModernUITheme.THEME_RED, bg=ModernUITheme.CARD_BG, activeforeground=ModernUITheme.THEME_RED_LIGHT, activebackground=ModernUITheme.CARD_BG, relief="flat", cursor="hand2", command=lambda e=excl: delete_folder(e))
+                ttk.Label(
+                    item_frame,
+                    text=excl,
+                    style='TLabel',
+                    background=ModernUITheme.BG_COLOR,
+                    width=50,
+                    anchor=tk.W
+                ).pack(side=tk.LEFT, fill=tk.X, expand=True, padx=ModernUITheme.INNER_PAD_X, pady=ModernUITheme.INNER_PAD_Y)
+                del_btn = tk.Button(
+                    item_frame,
+                    text="×",
+                    font=("Helvetica", 12, "bold"),
+                    fg=ModernUITheme.THEME_RED,
+                    bg=ModernUITheme.CARD_BG,
+                    activeforeground=ModernUITheme.THEME_RED_LIGHT,
+                    activebackground=ModernUITheme.CARD_BG,
+                    relief="flat",
+                    cursor="hand2",
+                    command=lambda e=excl: delete_folder(e)
+                )
                 del_btn.pack(side=tk.RIGHT, padx=5)
                 del_btn.bind("<Enter>", lambda e: del_btn.config(fg=ModernUITheme.THEME_RED_LIGHT))
                 del_btn.bind("<Leave>", lambda e: del_btn.config(fg=ModernUITheme.THEME_RED))
@@ -795,7 +846,16 @@ class ProjectCard(tk.Frame):
         # Folder Controls
         folder_control_frame = ttk.Frame(folder_frame, style='TFrame')
         folder_control_frame.pack(fill=tk.X)
-        folder_entry = tk.Entry(folder_control_frame, bg=ModernUITheme.CARD_BG, fg=ModernUITheme.FG_COLOR, insertbackground=ModernUITheme.FG_COLOR, font=("Helvetica", 12), relief="flat", highlightbackground=ModernUITheme.BORDER_COLOR, highlightthickness=1)
+        folder_entry = tk.Entry(
+            folder_control_frame,
+            bg=ModernUITheme.CARD_BG,
+            fg=ModernUITheme.FG_COLOR,
+            insertbackground=ModernUITheme.FG_COLOR,
+            font=("Helvetica", 12),
+            relief="flat",
+            highlightbackground=ModernUITheme.BORDER_COLOR,
+            highlightthickness=1
+        )
         folder_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10), ipady=4)
 
         def add_folder():
@@ -825,8 +885,18 @@ class ProjectCard(tk.Frame):
                 folder_exclusions.remove(excl)
                 refresh_folder_list()
 
-        tk.Button(folder_control_frame, text="Add Folder", command=add_folder, **ModernUITheme.SECONDARY_BUTTON_STYLE).pack(side=tk.LEFT, padx=(0, 5))
-        tk.Button(folder_control_frame, text="Browse...", command=lambda: folder_entry.insert(0, filedialog.askdirectory(initialdir=project_path)), **ModernUITheme.SECONDARY_BUTTON_STYLE).pack(side=tk.LEFT, padx=(0, 5))
+        tk.Button(
+            folder_control_frame,
+            text="Add Folder",
+            command=add_folder,
+            **ModernUITheme.SECONDARY_BUTTON_STYLE
+        ).pack(side=tk.LEFT, padx=(0, 5))
+        tk.Button(
+            folder_control_frame,
+            text="Browse...",
+            command=lambda: folder_entry.insert(0, filedialog.askdirectory(initialdir=project_path)),
+            **ModernUITheme.SECONDARY_BUTTON_STYLE
+        ).pack(side=tk.LEFT, padx=(0, 5))
 
         # Initial population
         refresh_file_list()
@@ -836,7 +906,14 @@ class ProjectCard(tk.Frame):
         def save_changes():
             """Save changes to the database"""
             try:
-                self.database.update_project(project_id, project['name'], project['folder_path'], project['description'], file_exclusions, folder_exclusions)
+                self.database.update_project(
+                    project_id,
+                    project['name'],
+                    project['folder_path'],
+                    project['description'],
+                    file_exclusions,
+                    folder_exclusions
+                )
                 messagebox.showinfo("Success", "Exclusions updated successfully")
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to update exclusions: {str(e)}")
@@ -845,8 +922,18 @@ class ProjectCard(tk.Frame):
 
         btn_frame = tk.Frame(dialog, **ModernUITheme.FRAME_STYLE)
         btn_frame.pack(fill=tk.X, pady=(10, 20), padx=20)
-        tk.Button(btn_frame, text="Save Changes", command=save_changes, **ModernUITheme.FIRST_BUTTON_STYLE).pack(side=tk.RIGHT, padx=(10, 0))
-        tk.Button(btn_frame, text="Cancel", command=dialog.destroy, **ModernUITheme.SECONDARY_BUTTON_STYLE).pack(side=tk.RIGHT, padx=(10, 0))
+        tk.Button(
+            btn_frame,
+            text="Save Changes",
+            command=save_changes,
+            **ModernUITheme.FIRST_BUTTON_STYLE
+        ).pack(side=tk.RIGHT, padx=(10, 0))
+        tk.Button(
+            btn_frame,
+            text="Cancel",
+            command=dialog.destroy,
+            **ModernUITheme.SECONDARY_BUTTON_STYLE
+        ).pack(side=tk.RIGHT, padx=(10, 0))
 
 class BackupUtilityApp:
     """Main application class for the Backup Utility"""
@@ -1077,7 +1164,7 @@ class BackupUtilityApp:
     def _create_backup(self, project_id):
         """Create a backup for the specified project"""
         # Change cursor to indicate processing
-        self.root.config(cursor="wait")
+        self.root.config(cursor="watch")
         self.root.update()
         # Create backup
         success, message = self.backup_manager.create_backup(project_id)
