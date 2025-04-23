@@ -13,6 +13,10 @@ The app is fully localized into:
 
 ✓ Argentinian Spanish
 
+![Web app dashboard](https://github.com/Northstrix/plum-cave/blob/main/screenshots/web-app/dashboard-1322px.png?raw=true)
+
+![Python script overview](https://github.com/Northstrix/plum-cave/blob/main/screenshots/python-script/python-script-overview.png?raw=true)
+
 # Firestore Rules
     
     rules_version = '2';
