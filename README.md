@@ -13,11 +13,11 @@ The app is fully localized into:
 
 ✓ Argentinian Spanish
 
-![Web app dashboard](https://github.com/Northstrix/plum-cave/blob/main/screenshots/web-app/dashboard.png?raw=true)
+![Web app dashboard 2560px](https://github.com/Northstrix/plum-cave/blob/main/screenshots/web-app/dashboard.png?raw=true)
 
-![Web app dashboard](https://github.com/Northstrix/plum-cave/blob/main/screenshots/web-app/dashboard-1322px.png?raw=true)
+![Web app dashboard 1322px](https://github.com/Northstrix/plum-cave/blob/main/screenshots/web-app/dashboard-1322px.png?raw=true)
 
-![Web app dashboard](https://github.com/Northstrix/plum-cave/blob/main/screenshots/web-app/hovered-rectangle-in-desktop-features-section.png?raw=true)
+![Hovered element in the desktop features section](https://github.com/Northstrix/plum-cave/blob/main/screenshots/web-app/hovered-rectangle-in-desktop-features-section.png)
 
 ![Python script overview](https://github.com/Northstrix/plum-cave/blob/main/screenshots/python-script/python-script-overview.png?raw=true)
 
